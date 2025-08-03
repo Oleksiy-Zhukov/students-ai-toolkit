@@ -1,4 +1,4 @@
-# Student AI Toolkit
+# StudentsAI - A Smart Toolkit
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -16,7 +16,7 @@
 
 ## Live Now!
 
-* Experience the Student AI Toolkit in action: https://www.studentsai.org/
+* Experience the StudentsAI in action: https://www.studentsai.org/
 
 <a href="https://www.studentsai.org/" target="_blank">
   <img width="1550" height="880" alt="image" src="https://github.com/user-attachments/assets/5296ecd6-c334-4f42-9bee-e1f33da39309" />
