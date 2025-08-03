@@ -12,6 +12,7 @@ class ActionType(str, Enum):
     SUMMARIZE = "summarize"
     GENERATE_QUESTIONS = "generate_questions"
     PLAN_STUDY = "plan_study"
+    FLASHCARDS = "flashcards"
 
 class ProcessRequest(BaseModel):
     """Request model for processing text or file content."""

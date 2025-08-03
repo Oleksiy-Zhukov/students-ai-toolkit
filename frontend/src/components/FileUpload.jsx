@@ -1,15 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Upload, File, X, Check, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { AnimatedButton, AnimatedIconButton } from './animated/AnimatedButton'
-import { LoadingSpinner, ProgressSpinner } from './animated/LoadingSpinner'
-import { useReducedMotion, useProgressAnimation } from '@/hooks/useAnimations'
-import { uploadZoneVariants, successVariants, errorVariants } from '@/animations/variants'
-import { useRecaptcha } from './RecaptchaWrapper'
 import { useRecaptchaContext } from './RecaptchaProvider'
+import { RetroTooltip } from '@/components/ui/retro-tooltip'
 
 export const FileUpload = ({ onFileUpload }) => {
   const [dragActive, setDragActive] = useState(false)
@@ -20,8 +15,6 @@ export const FileUpload = ({ onFileUpload }) => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const fileInputRef = useRef(null)
-  const prefersReducedMotion = useReducedMotion()
-  const animatedProgress = useProgressAnimation(uploadProgress, 1000)
   
   // reCAPTCHA v3 integration
   const recaptcha = useRecaptchaContext()
@@ -96,7 +89,7 @@ export const FileUpload = ({ onFileUpload }) => {
         })
       }, 200)
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://students-ai-toolkit-production.up.railway.app'
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
       const response = await fetch(`${apiBaseUrl}/parse-file`, {
         method: 'POST',
         body: formData
@@ -174,203 +167,167 @@ export const FileUpload = ({ onFileUpload }) => {
     setSuccess('')
   }
 
-  const uploadZoneProps = prefersReducedMotion ? {} : {
-    variants: uploadZoneVariants,
-    initial: "initial",
-    animate: dragActive ? "dragOver" : "initial",
-    whileHover: { scale: 1.01 },
-    transition: { duration: 0.2 }
-  }
+  // Simple keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Command + Enter (Mac) or Ctrl + Enter (Windows/Linux) to submit text
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        if (textContent.trim() && !isUploading) {
+          handleTextSubmit()
+        }
+      }
+      
+      // Escape to clear text
+      if (e.key === 'Escape' && textContent) {
+        e.preventDefault()
+        clearText()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [textContent, isUploading])
 
   return (
     <div className="space-y-6">
-      {/* File Upload Zone */}
-      <motion.div
-        {...uploadZoneProps}
-        className={`upload-zone relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 ${
-          dragActive ? 'border-primary bg-primary/5 scale-102' : 'border-muted-foreground/30'
-        } ${isUploading ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:border-primary/50'}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          accept=".pdf,.txt,.docx"
-          onChange={handleFileInputChange}
+      {/* Primary Text Input */}
+      <div className="space-y-3">
+        <Textarea
+          placeholder="Paste your study material here or start typing your content..."
+          value={textContent}
+          onChange={(e) => setTextContent(e.target.value)}
+          className="min-h-[200px] resize-none japanese-textarea text-base pixel-border"
           disabled={isUploading}
         />
+          
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>{textContent.length} characters</p>
+              <p>⌘+Enter to submit • Esc to clear</p>
+            </div>
+            
+            <div className="flex space-x-2">
+                {textContent && (
+                  <RetroTooltip content="Clear text content" shortcut="escape">
+                    <button
+                      onClick={clearText}
+                      className="japanese-button text-xs bg-background text-foreground border-foreground hover:bg-foreground hover:text-background py-0.5 px-2"
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Clear
+                    </button>
+                  </RetroTooltip>
+                )}
+                
+                <RetroTooltip content="Submit text content" shortcut="cmd+enter">
+                  <button
+                    onClick={handleTextSubmit}
+                    disabled={!textContent.trim() || isUploading}
+                    className="japanese-button text-xs disabled:opacity-50 disabled:cursor-not-allowed py-0.5 px-2"
+                  >
+                    <Check className="w-3 h-3 mr-1" />
+                    Use This Text
+                  </button>
+                </RetroTooltip>
+              </div>
+            </div>
+          </div>
 
-        <AnimatePresence mode="wait">
+
+      {/* File Upload Alternative */}
+      <div className="relative">
+        <div className="flex items-center space-x-2 mb-4">
+          <div className="h-px bg-border flex-1" />
+          <span className="text-sm text-muted-foreground px-2">Or upload a file</span>
+          <div className="h-px bg-border flex-1" />
+        </div>
+
+        <div
+          className={`upload-zone relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 pixel-border ${
+            dragActive ? 'border-yellow-500 bg-yellow-50 dark:border-yellow-500 dark:bg-yellow-900/20' : 'border-border'
+          } ${isUploading ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:border-yellow-400 dark:hover:border-yellow-400'}`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.txt,.docx"
+            onChange={handleFileInputChange}
+            disabled={isUploading}
+          />
+
           {isUploading ? (
-            <motion.div
-              key="uploading"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="space-y-4"
-            >
-              <LoadingSpinner size="lg" variant="spin" />
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="pixel-loader text-yellow-600 dark:text-yellow-500 mx-auto" />
+              <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Uploading file...</p>
                 <div className="max-w-xs mx-auto">
-                  <Progress value={animatedProgress} className="h-2" />
+                  <Progress value={uploadProgress} className="h-1 retro-progress" />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {Math.round(animatedProgress)}%
+                    {Math.round(uploadProgress)}%
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ) : file ? (
-            <motion.div
-              key="file-selected"
-              variants={successVariants}
-              initial="initial"
-              animate="animate"
-              className="space-y-4"
-            >
+            <div className="space-y-3">
               <div className="flex items-center justify-center space-x-2">
-                <Check className="w-6 h-6 text-green-500" />
-                <File className="w-6 h-6 text-primary" />
+                <Check className="w-5 h-5 text-green-500" />
+                <File className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="font-medium text-foreground">{file.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground text-sm">{file.name}</p>
+                <p className="text-xs text-muted-foreground">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
-              <AnimatedButton
-                variant="outline"
-                size="sm"
+              <button
                 onClick={(e) => {
                   e.stopPropagation()
                   clearFile()
                 }}
+                className="japanese-button text-xs bg-background text-foreground border-foreground hover:bg-foreground hover:text-background"
               >
-                <X className="w-4 h-4 mr-2" />
+                <X className="w-3 h-3 mr-1" />
                 Remove
-              </AnimatedButton>
-            </motion.div>
+              </button>
+            </div>
           ) : (
-            <motion.div
-              key="upload-prompt"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              <motion.div
-                className="float"
-                animate={prefersReducedMotion ? {} : {
-                  y: [-5, 5, -5],
-                  transition: {
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }
-                }}
-              >
-                <Upload className="w-12 h-12 text-primary mx-auto" />
-              </motion.div>
+            <div className="space-y-3">
+              <Upload className="w-8 h-8 text-yellow-600 dark:text-yellow-400 mx-auto" />
               <div>
-                <p className="text-lg font-medium text-foreground">
+                <p className="text-sm font-medium text-foreground">
                   Drop your file here or click to browse
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-1">
                   Supports PDF, TXT, and DOCX files up to 10MB
                 </p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Text Input Alternative */}
-      <div className="relative">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center space-x-2">
-            <div className="h-px bg-border flex-1" />
-            <span className="text-sm text-muted-foreground px-2">Or enter text directly</span>
-            <div className="h-px bg-border flex-1" />
-          </div>
-
-          <div className="space-y-3">
-            <Textarea
-              placeholder="Paste your content here..."
-              value={textContent}
-              onChange={(e) => setTextContent(e.target.value)}
-              className="min-h-[120px] resize-none"
-              disabled={isUploading}
-            />
-            
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {textContent.length} characters
-              </p>
-              
-              <div className="flex space-x-2">
-                {textContent && (
-                  <AnimatedButton
-                    variant="outline"
-                    size="sm"
-                    onClick={clearText}
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Clear
-                  </AnimatedButton>
-                )}
-                
-                <AnimatedIconButton
-                  icon={Check}
-                  variant="default"
-                  size="sm"
-                  onClick={handleTextSubmit}
-                  disabled={!textContent.trim() || isUploading}
-                >
-                  Use This Text
-                </AnimatedIconButton>
-              </div>
             </div>
-          </div>
-        </motion.div>
+          )}
+        </div>
       </div>
 
       {/* Status Messages */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            variants={errorVariants}
-            initial="initial"
-            animate="animate"
-            exit="initial"
-            className="flex items-center space-x-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg"
-          >
-            <AlertCircle className="w-4 h-4 text-destructive" />
-            <p className="text-sm text-destructive">{error}</p>
-          </motion.div>
-        )}
+      {error && (
+        <div className="flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-red-600" />
+          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+        </div>
+      )}
 
-        {success && (
-          <motion.div
-            variants={successVariants}
-            initial="initial"
-            animate="animate"
-            exit="initial"
-            className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg"
-          >
-            <Check className="w-4 h-4 text-green-600" />
-            <p className="text-sm text-green-700">{success}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {success && (
+        <div className="flex items-center space-x-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <Check className="w-4 h-4 text-green-600" />
+          <p className="text-sm text-green-700 dark:text-green-400">{success}</p>
+        </div>
+      )}
     </div>
   )
 }

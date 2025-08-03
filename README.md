@@ -37,6 +37,7 @@ This project serves a dual purpose: it's a powerful productivity tool for studen
 ## Project Status
 
 *   **Deployed & Functional:** Live and ready for use.
+*   **Enhanced UI/UX:** Recently updated with improved design, animations, and user experience.
 *   **Actively Maintained:** Continuously improved with new features and optimizations.
 *   **Secure & Reliable:** Features like reCAPTCHA v3 and rate limiting ensure a secure and smooth user experience.
 
@@ -44,7 +45,7 @@ This project serves a dual purpose: it's a powerful productivity tool for studen
 
 | Layer     | Technologies                               |
 | :-------- | :----------------------------------------- |
-| Frontend  | React, Vite, Tailwind CSS, shadcn/ui       |
+| Frontend  | React 19, Vite, Tailwind CSS 4, shadcn/ui, Framer Motion |
 | Backend   | FastAPI (Python 3.11+), Uvicorn            |
 | AI        | OpenAI (default), Hugging Face (optional)  |
 | Security  | Google reCAPTCHA v3, Rate Limiting, CORS   |
@@ -55,6 +56,14 @@ This project serves a dual purpose: it's a powerful productivity tool for studen
 ### Frontend
 
 A component-based React Single Page Application (SPA) featuring intuitive modules like `FileUploader`, `ActionSelector`, and `ResultsDisplay`. It leverages React hooks and `fetch` for seamless communication with the backend.
+
+**Enhanced Features:**
+- **Progressive Disclosure UI:** Smart flow that guides users through the process
+- **Japanese-Inspired Design:** Clean, minimal aesthetic with subtle animations
+- **Gruvbox Dark Theme:** Beautiful color palette with proper dark mode support
+- **Responsive Animations:** Smooth transitions and micro-interactions
+- **Keyboard Shortcuts:** Enhanced accessibility and power-user features
+- **Retro Tooltips:** Contextual help with 90s-inspired styling
 
 ### Backend
 
@@ -72,9 +81,11 @@ For a detailed architectural breakdown, refer to the [Architecture Document](doc
 
 *   **Versatile Content Input:** Upload and parse `.pdf`, `.txt`, or `.docx` files, or paste text directly.
 *   **AI-Powered Learning Tools:** Summarize content, generate insightful questions, and create personalized study plans.
+*   **Enhanced User Experience:** Progressive disclosure, smooth animations, and intuitive navigation.
 *   **Export & Share:** Easily export results or copy them to your clipboard.
 *   **Mobile-Responsive:** Optimized for a seamless experience across all devices.
 *   **Swappable AI Backends:** Flexibility to choose between OpenAI and Hugging Face for AI processing.
+*   **Keyboard Shortcuts:** Power-user features for faster navigation and interaction.
 
 ## Local Setup
 
@@ -121,7 +132,7 @@ PORT=8000
 #### Frontend (React + Vite)
 
 ```bash
-cd ../frontend/student-ai-toolkit-frontend
+cd ../frontend
 npm install
 ```
 
@@ -136,7 +147,7 @@ cd backend && python main.py
 **Frontend:**
 
 ```bash
-cd frontend/student-ai-toolkit-frontend && npm run dev
+cd frontend && npm run dev
 ```
 
 Access the application in your browser at: [http://localhost:5173](http://localhost:5173) (or similar)
@@ -148,6 +159,17 @@ The Student AI Toolkit is already deployed and accessible:
 *   **Frontend:** [Vercel](https://vercel.com/) → [studentsai.org](https://www.studentsai.org/)
 *   **Backend:** [Railway](https://railway.app/) → [api.studentsai.org](https://api.studentsai.org/)
 
+## Recent Updates
+
+### Enhanced UI/UX (Latest)
+- **Progressive Disclosure:** Smart UI flow that reveals features as users progress
+- **Japanese-Inspired Design:** Clean, minimal aesthetic with subtle animations
+- **Enhanced Animations:** Smooth transitions and micro-interactions throughout
+- **Keyboard Shortcuts:** Power-user features for faster navigation
+- **Retro Tooltips:** Contextual help with 90s-inspired styling
+- **Improved Accessibility:** Better focus states and keyboard navigation
+- **Responsive Improvements:** Enhanced mobile and tablet experience
+
 ## Future
 
 Our vision for the Student AI Toolkit includes:
@@ -157,6 +179,8 @@ Our vision for the Student AI Toolkit includes:
 *   Database for persistence
 *   More input types (URLs, web pages)
 *   Custom AI prompt builder
+*   Collaborative study features
+*   Advanced analytics and insights
 
 Explore our progress and contribute to future enhancements by viewing [open issues](https://github.com/Oleksiy-Zhukov/students-ai-toolkit/issues).
 

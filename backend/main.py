@@ -153,7 +153,7 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @app.post("/process", response_model=ProcessResponse, tags=["AI Processing"])
-@limiter.limit("4/hour")
+@limiter.limit("20/hour")  # Increased for development
 async def process_content(
     body: ProcessRequest,
     request: Request,
@@ -218,7 +218,7 @@ async def process_content(
 
 
 @app.post("/parse-file", response_model=dict, tags=["AI Processing"])
-@limiter.limit("4/hour")
+@limiter.limit("20/hour")  # Increased for development
 async def parse_file(
     request: Request,
     file: UploadFile = File(...),
@@ -339,7 +339,7 @@ async def parse_file(
 
 
 @app.post("/process-file", response_model=ProcessResponse, tags=["AI Processing"])
-@limiter.limit("4/hour")
+@limiter.limit("20/hour")  # Increased for development
 async def process_file(
     request: Request,
     file: UploadFile = File(...),
@@ -392,6 +392,11 @@ async def get_available_actions():
                 "id": ActionType.PLAN_STUDY.value,
                 "name": "Plan Study",
                 "description": "Create a structured study plan from the content.",
+            },
+            {
+                "id": ActionType.FLASHCARDS.value,
+                "name": "Generate Flashcards",
+                "description": "Create flashcards for active recall learning.",
             },
         ]
     }

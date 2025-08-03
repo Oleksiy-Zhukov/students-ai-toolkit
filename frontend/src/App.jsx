@@ -1,16 +1,12 @@
 import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { FileUpload } from './components/FileUpload'
 import { ActionSelector } from './components/ActionSelector'
 import { ResultDisplay } from './components/ResultDisplay'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
-import { RecaptchaWrapper, useRecaptcha } from './components/RecaptchaWrapper'
+import { RecaptchaWrapper } from './components/RecaptchaWrapper'
 import { RecaptchaProvider } from './components/RecaptchaProvider'
-import { AnimatedCard, AnimatedCardHeader, AnimatedCardContent } from './components/animated/AnimatedCard'
 import { Toaster } from '@/components/ui/sonner'
-import { useScrollAnimation, useReducedMotion } from './hooks/useAnimations'
-import { pageVariants, staggerContainer, staggerItem } from './animations/variants'
 import './App.css'
 
 function App() {
@@ -20,29 +16,38 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   
-  const { ref: mainRef, isInView } = useScrollAnimation()
-  const prefersReducedMotion = useReducedMotion()
-
-    // reCAPTCHA hook
-  const recaptcha = useRecaptcha()
-
+  // Progressive disclosure state
+  const [showHero, setShowHero] = useState(true)
+  const [showFileUpload, setShowFileUpload] = useState(true)
+  const [showActionSelector, setShowActionSelector] = useState(true)
+  const [showResults, setShowResults] = useState(false)
+  
   const handleFileUpload = (content) => {
     setUploadedContent(content)
     setResult(null)
     setError(null)
     setSelectedAction('')
+    setShowResults(false)
+    setShowActionSelector(true)
   }
 
   const handleActionSelect = (action) => {
     setSelectedAction(action)
     setResult(null)
     setError(null)
+    setShowResults(false)
   }
 
-   const handleProcess = async (textContent, action, additionalInstructions = '', recaptchaToken = '') => {
+  const handleProcess = async (textContent, action, additionalInstructions = '', recaptchaToken = '') => {
     setIsLoading(true)
     setError(null)
     setResult(null)
+    
+    // Progressive disclosure: collapse previous sections
+    setShowHero(false)
+    setShowFileUpload(false)
+    setShowActionSelector(false)
+    setShowResults(true)
 
     try {
        const requestBody = {
@@ -56,7 +61,8 @@ function App() {
         requestBody.recaptcha_token = recaptchaToken
       }
       
-      const response = await fetch('https://api.studentsai.org/process', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const response = await fetch(`${apiBaseUrl}/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,255 +84,245 @@ function App() {
     }
   }
 
-  const containerVariants = prefersReducedMotion ? {
-    initial: { opacity: 1 },
-    animate: { opacity: 1 }
-  } : {
-    ...staggerContainer,
-    animate: {
-      ...staggerContainer.animate,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1
-      }
-    }
+  const handleReset = () => {
+    setUploadedContent('')
+    setSelectedAction('')
+    setResult(null)
+    setError(null)
+    setIsLoading(false)
+    setShowHero(true)
+    setShowFileUpload(true)
+    setShowActionSelector(true)
+    setShowResults(false)
   }
-
-  const sectionVariants = prefersReducedMotion ? {
-    initial: { opacity: 1, y: 0 },
-    animate: { opacity: 1, y: 0 }
-  } : staggerItem
 
   return (
     <RecaptchaProvider>
-      <div className="min-h-screen gradient-bg">
-      <Header />
-      
-      <motion.main 
-        ref={mainRef}
-        variants={pageVariants}
-        initial="initial"
-        animate={isInView ? "animate" : "initial"}
-        className="container mx-auto px-6 py-12 max-w-4xl"
-      >
-        <motion.div 
-          variants={containerVariants}
-          initial="initial"
-          animate="animate"
-          className="space-y-12"
-        >
-          {/* Hero Section */}
-          <motion.section 
-            variants={sectionVariants}
-            className="text-center space-y-4 py-8"
-          >
-            <motion.h1 
-              className="text-4xl md:text-5xl font-bold gradient-text"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              Transform Your Learning
-            </motion.h1>
-            <motion.p 
-              className="text-lg text-muted-foreground max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
-              Upload your study materials and let AI help you summarize, create questions, 
-              and plan your learning journey with intelligent insights.
-            </motion.p>
-          </motion.section>
-
-          {/* File Upload Section */}
-          <motion.section 
-            variants={sectionVariants} 
-            className="py-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto"
-          >
-            <AnimatedCard className="overflow-hidden border border-border shadow-sm rounded-2xl">
-              <AnimatedCardHeader className="px-6 pt-6">
-                <div className="flex items-center space-x-3">
-                  <motion.div
-                    animate={prefersReducedMotion ? {} : {
-                      rotate: [0, 10, -10, 0],
-                      transition: {
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }
-                    }}
-                    className="text-2xl"
-                  >
-                    📁
-                  </motion.div>
-                  <h2 className="text-2xl font-semibold text-foreground">
-                    Upload Your Content
-                  </h2>
-                </div>
-                <p className="text-muted-foreground mt-3 text-sm">
-                  Start by uploading a document or pasting your text content
-                </p>
-              </AnimatedCardHeader>
-              <AnimatedCardContent className="px-6 pb-6 pt-2">
-                <FileUpload onFileUpload={handleFileUpload} />
-              </AnimatedCardContent>
-            </AnimatedCard>
-          </motion.section>
-
-
-          {/* Action Selection Section */}
-          <AnimatePresence>
-            {uploadedContent && (
-              <motion.section 
-                variants={sectionVariants} 
-                initial="initial" 
-                animate="animate" 
-                exit="exit"
-                className="py-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto"
-              >
-                <AnimatedCard className="overflow-hidden border border-border shadow-sm rounded-2xl" delay={0.2}>
-                  <AnimatedCardHeader className="px-6 pt-6">
-                    <div className="flex items-center space-x-3">
-                      <motion.div
-                        animate={prefersReducedMotion ? {} : {
-                          scale: [1, 1.1, 1],
-                          transition: {
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }
-                        }}
-                        className="text-2xl"
-                      >
-                        🎯
-                      </motion.div>
-                      <h2 className="text-2xl font-semibold text-foreground">
-                        Choose Your Action
-                      </h2>
+      <div className="min-h-screen bg-background relative">
+        {/* Gridded background overlay */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `
+            linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+          backgroundPosition: '0 0'
+        }}></div>
+        
+        {/* Dark mode gridded background overlay */}
+        <div className="absolute inset-0 pointer-events-none dark:block hidden" style={{
+          backgroundImage: `
+            linear-gradient(rgba(235, 219, 178, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(235, 219, 178, 0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+          backgroundPosition: '0 0'
+        }}></div>
+        
+        <Header />
+        
+        <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
+          <div className="space-y-8">
+            {/* Hero Section */}
+            {showHero && (
+              <section className="min-h-screen flex items-center justify-center py-20">
+                <div className="max-w-6xl mx-auto text-center space-y-12">
+                  {/* Main Title */}
+                  <div className="space-y-8 animate-fade-in-up">
+                    <div className="space-y-4">
+                      <h1 className="text-5xl md:text-7xl font-bold text-foreground tracking-tight">
+                        StudentsAI
+                      </h1>
+                      <div className="w-32 h-1 bg-foreground mx-auto"></div>
                     </div>
-                    <p className="text-muted-foreground mt-3 text-sm">
-                      Select how you'd like AI to help with your content
+                    <p className="text-2xl md:text-3xl text-muted-foreground font-light max-w-4xl mx-auto leading-relaxed">
+                      Your study materials, reimagined
                     </p>
-                  </AnimatedCardHeader>
-
-                  <AnimatedCardContent className="px-6 pb-6 pt-2">
-                    <ActionSelector 
-                      onActionSelect={handleActionSelect}
-                      selectedAction={selectedAction}
-                      textContent={uploadedContent}
-                      onProcess={handleProcess}
-                      isLoading={isLoading}
-                    />
-                  </AnimatedCardContent>
-                </AnimatedCard>
-              </motion.section>
-            )}
-          </AnimatePresence>
-
-
-          {/* Results Section */}
-          <AnimatePresence>
-            {(result || error || isLoading) && (
-              <motion.section 
-                variants={sectionVariants} 
-                initial="initial" 
-                animate="animate" 
-                exit="exit"
-                className="py-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto"
-              >
-                <AnimatedCard className="overflow-hidden border border-border shadow-sm rounded-2xl" delay={0.3}>
-                  <AnimatedCardHeader className="px-6 pt-6">
-                    <div className="flex items-center space-x-3">
-                      <motion.div
-                        animate={prefersReducedMotion ? {} : {
-                          rotate: [0, 360],
-                          transition: {
-                            duration: 3,
-                            repeat: Infinity,
-                            ease: "linear"
-                          }
-                        }}
-                        className="text-2xl"
-                      >
-                        ✨
-                      </motion.div>
-                      <h2 className="text-2xl font-semibold text-foreground">
-                        Results
-                      </h2>
-                    </div>
-                    <p className="text-muted-foreground mt-3 text-sm">
-                      {isLoading 
-                        ? 'AI is processing your content...' 
-                        : "Here's what AI generated for you"}
-                    </p>
-                  </AnimatedCardHeader>
-
-                  <AnimatedCardContent className="px-6 pb-6 pt-2">
-                    <ResultDisplay 
-                      result={result}
-                      error={error}
-                      isLoading={isLoading}
-                    />
-                  </AnimatedCardContent>
-                </AnimatedCard>
-              </motion.section>
-            )}
-          </AnimatePresence>
-
-
-          {/* Getting Started Guide */}
-          {!uploadedContent && (
-            <motion.section 
-              variants={sectionVariants}
-              className="py-10 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto"
-            >
-              <AnimatedCard className="overflow-hidden border border-border shadow-sm rounded-2xl bg-primary/5">
-                <AnimatedCardHeader className="px-6 pt-6">
-                  <motion.div
-                    animate={prefersReducedMotion ? {} : {
-                      y: [-5, 5, -5],
-                      transition: {
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }
-                    }}
-                    className="text-3xl mb-4 text-center"
-                  >
-                  🚀
-                  </motion.div>
-                  <h2 className="text-2xl font-semibold text-primary text-center">
-                    Ready to Get Started?
-                  </h2>
-                  <p className="text-muted-foreground mt-3 text-sm text-center">
-                    Upload a document or paste your text above to begin your AI-powered learning journey.
-                  </p>
-                </AnimatedCardHeader>
-
-                <AnimatedCardContent className="px-6 pb-6 pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                    {["Upload content", "Choose action", "Get AI insights"].map((step, index) => (
-                      <div key={step} className="flex items-center space-x-3">
-                        <div className="w-7 h-7 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-sm">
-                          {index + 1}
-                        </div>
-                        <span>{step}</span>
-                      </div>
-                    ))}
                   </div>
-                </AnimatedCardContent>
-              </AnimatedCard>
-            </motion.section>
-          )}
 
+                  {/* Demo Section */}
+                  <div className="mt-20 animate-fade-in-up animate-delay-1">
+                    <div className="text-center mb-12">
+                      <h2 className="text-2xl japanese-text text-foreground mb-4">From Complex to Clear</h2>
+                      <p className="text-muted-foreground max-w-2xl mx-auto">
+                        Turn dense research into study-ready content
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      {/* Interactive Demo Cards */}
+                      <div className="space-y-4">
+                        <div className="japanese-card p-6 h-64 relative overflow-hidden group">
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="relative z-10 h-full flex flex-col">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg japanese-text text-foreground">Sample Input</h3>
+                              <div className="pixel-loader text-foreground" style={{ width: '16px', height: '16px' }} />
+                            </div>
+                                                          <div className="flex-1 bg-muted p-4 border-2 border-border text-left">
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  <span className="text-foreground font-medium">Complex Research Paper:</span> The quantum mechanical principles underlying electron transport in photosynthetic systems demonstrate remarkable efficiency through coherent energy transfer mechanisms. Recent spectroscopic studies reveal that quantum coherence persists for hundreds of femtoseconds, enabling near-unity quantum efficiency in light harvesting complexes. This discovery challenges traditional models of energy transfer and opens new possibilities for artificial photosynthesis and quantum computing applications...
+                                </p>
+                              </div>
+                          </div>
+                        </div>
+                      </div>
 
-        </motion.div>
-      </motion.main>
+                      <div className="space-y-4">
+                        <div className="japanese-card p-6 h-64 relative overflow-hidden group">
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="relative z-10 h-full flex flex-col">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg japanese-text text-foreground">AI Output</h3>
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                              </div>
+                            </div>
+                            <div className="flex-1 bg-muted p-4 border-2 border-border text-left">
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                <span className="text-foreground font-medium">Generated Questions:</span><br/>
+                                1. How does quantum coherence contribute to photosynthesis efficiency?<br/>
+                                2. What are the implications of femtosecond coherence for artificial photosynthesis?<br/>
+                                3. How might this research impact quantum computing development?
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-      <Footer />
-      <Toaster />
-    </div>
+                  {/* Interactive Feature Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+                    <div className="japanese-card p-6 group cursor-pointer hover:scale-105 transition-transform duration-300 animate-slide-in-left animate-delay-2">
+                      <div className="space-y-4">
+                        <div className="text-3xl japanese-text text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">01</div>
+                        <h3 className="text-lg japanese-text text-foreground">Summarize</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Extract key insights from your content
+                        </p>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                            Perfect for: Long articles, research papers, textbook chapters
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="japanese-card p-6 group cursor-pointer hover:scale-105 transition-transform duration-300 animate-fade-in-up animate-delay-3">
+                      <div className="space-y-4">
+                        <div className="text-3xl japanese-text text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">02</div>
+                        <h3 className="text-lg japanese-text text-foreground">Generate</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Create study questions and flashcards
+                        </p>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                            Perfect for: Exam prep, active recall, self-assessment
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="japanese-card p-6 group cursor-pointer hover:scale-105 transition-transform duration-300 animate-slide-in-right animate-delay-4">
+                      <div className="space-y-4">
+                        <div className="text-3xl japanese-text text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">03</div>
+                        <h3 className="text-lg japanese-text text-foreground">Plan</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Build structured study plans
+                        </p>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                            Perfect for: Course planning, time management, goal setting
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Call to Action */}
+                  <div className="mt-16 space-y-6 animate-fade-in-up animate-delay-5">
+                    <p className="text-lg text-muted-foreground">
+                      Ready to enhance your learning experience?
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowHero(false)
+                        setShowFileUpload(true)
+                      }}
+                                              className="japanese-button text-lg"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* File Upload Section */}
+            {showFileUpload && (
+              <section className="space-y-4 animate-fade-in-up">
+                <div className="japanese-card p-8">
+                  <div className="text-center space-y-4">
+                    <h2 className="text-2xl japanese-text text-foreground">Upload Your Content</h2>
+                    <div className="w-16 h-1 bg-foreground mx-auto"></div>
+                    <p className="text-muted-foreground">
+                      Upload a document or paste text to get started
+                    </p>
+                  </div>
+                  <div className="mt-8">
+                    <FileUpload onFileUpload={handleFileUpload} />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Action Selector Section */}
+            {showActionSelector && uploadedContent && (
+              <section className="space-y-6 animate-fade-in-up">
+                <div className="text-center space-y-4">
+                  <h2 className="text-2xl japanese-text text-foreground">Choose Your AI Action</h2>
+                  <div className="w-16 h-1 bg-foreground mx-auto"></div>
+                  <p className="text-muted-foreground">
+                    Select how you'd like to process your content
+                  </p>
+                </div>
+                <ActionSelector
+                  onActionSelect={handleActionSelect}
+                  selectedAction={selectedAction}
+                  textContent={uploadedContent}
+                  onProcess={handleProcess}
+                  isLoading={isLoading}
+                />
+              </section>
+            )}
+
+            {/* Results Section */}
+            {showResults && (result || error || isLoading) && (
+              <section className="space-y-6 animate-fade-in-up">
+                <div className="text-center mb-6">
+                  <button
+                    onClick={handleReset}
+                    className="japanese-button"
+                  >
+                    Start Over
+                  </button>
+                </div>
+                <ResultDisplay
+                  result={result}
+                  error={error}
+                  isLoading={isLoading}
+                />
+              </section>
+            )}
+          </div>
+        </main>
+
+        <Footer />
+        <Toaster />
+        <RecaptchaWrapper />
+      </div>
     </RecaptchaProvider>
   )
 }
