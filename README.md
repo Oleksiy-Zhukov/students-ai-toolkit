@@ -19,7 +19,8 @@
 * Experience the Student AI Toolkit in action: https://www.studentsai.org/
 
 <a href="https://www.studentsai.org/" target="_blank">
-  <img width="1565" height="1308" alt="image" src="https://github.com/user-attachments/assets/3f731e7c-902c-4f26-b076-79776d48721f" />
+  <img width="1550" height="880" alt="image" src="https://github.com/user-attachments/assets/5296ecd6-c334-4f42-9bee-e1f33da39309" />
+
 </a>
 
 ## About
